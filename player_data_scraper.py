@@ -1,7 +1,7 @@
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
-from IPython.display import display
+import os
 
 def get_team_url(team_name):
     # This is for the premier league
@@ -36,25 +36,69 @@ url = get_team_url('Liverpool')
 def stat_finder(team_name):
     team_url = get_team_url(team_name)
     
-    df = pd.read_html(team_url)[0]
+    # Choose specific table from team url (5 = passing | 0 = standard stats | 4 = shooting stats)
+    df = pd.read_html(team_url)[4]
     df.columns = df.columns.droplevel(0)
-    df = df[df['MP'] > 2] 
+    #df = df[df['MP'] > 15] 
+    df = df[df['90s'] > 10]
+
+    # Filter number of shots if necessary
+    df = df[df['Sh'] > 10]
     df = df.iloc[:-2]
+
+    # Drop final column
+    df = df.iloc[:, :-1]
 
     df = df.drop(['Nation','Pos','Age'],axis=1)
     
+    #df = df[['Player','KP','Ast','xAG','xA','1/3','PPA','PrgP']]
+    #print(df.columns)
     return df
+
+output_folder = "Premier League 200224 shots"
 
 def create_spreadsheet(team_name):
     df = stat_finder(team_name)
-    df.to_csv(f'{team_name}.xlsx', index=False)
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+
+    df.to_csv(os.path.join(output_folder, f'{team_name}.csv'), index=False)
 
 #print(stat_finder('Liverpool'))
 #table = stat_finder('Liverpool')
+#print(table)
 
-create_spreadsheet('Liverpool')
+#create_spreadsheet("Sheffield Utd")
+#print(stat_finder('Liverpool'))
 
 
+teams = ["Liverpool",
+         "Manchester City",
+         "Arsenal",
+         "Tottenham",
+         "Aston Villa",
+         "Manchester Utd",
+         "Newcastle Utd",
+         "West Ham",
+         "Brighton",
+         "Chelsea",
+         "Wolves",
+         "Fulham",
+         "Bournemouth",
+         "Brentford",
+         "Crystal Palace",
+         "Nott'ham Forest",
+         "Luton Town",
+         "Everton",
+         "Burnley",
+         "Sheffield Utd"]
+
+
+def create_spreadsheets_for_teams(teams):
+    for team_name in teams:
+        create_spreadsheet(team_name)
+
+create_spreadsheets_for_teams(teams)
 
 
 
